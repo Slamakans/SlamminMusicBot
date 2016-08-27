@@ -14,7 +14,7 @@ exports.execute = function(bot, msg, suffix){
   var command_name = RegExp.$1;
   var aliases = RegExp.$2;
   var execCode = RegExp.$3
-                .replace(/respond\((.*?)\);/g, "msg.channel.sendMessage($1)")
+                .replace(/respond\(((?:.|[\n\r])*?)\);/g, "msg.channel.sendMessage($1);");
                 .split("\n")
                 .map(s => `  ${s}`)
                 .join("\n");
