@@ -1,0 +1,18 @@
+{
+    "newcommand": [
+        "newcommand",
+        "createcommand",
+        "nc"
+    ],
+    "ping": [
+        "p",
+        "pingaling"
+    ],
+    "prefix": [],
+    "tc": [],
+    "updatecommandlist": [
+        "ucl",
+        "reloadcommandlist",
+        "rcl"
+    ]
+}

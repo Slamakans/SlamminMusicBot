@@ -1,0 +1,5 @@
+// Change the name of this file to prefix_config.json and type your desired default prefix down below.
+{
+  "defaultPrefix":"default prefix here",
+  "prefixes":{}
+}

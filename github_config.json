@@ -1,0 +1,6 @@
+// Change the name of this file to config.json and type your bot token where it says "token here". Keep the quotes.
+{
+  "auth": {
+    "token": "token here"
+  }
+}
