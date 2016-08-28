@@ -13,8 +13,24 @@ exports.saveJSON = function(path, jsonObject){
 	return new Promise((resolve, reject) => {
 		fs.writeFile(path, JSON.stringify(jsonObject, null, 4), (err) => {
 			if(err) reject(err);
-			resolve();
+			else resolve();
 		});
+	});
+}
+
+exports.loadData = function(name){
+	return new Promise((resolve, reject) => {
+		exports.getJSON(`data/${name}.json`)
+			.then(resolve)
+			.catch(reject);
+	});
+}
+
+exports.saveData = function(name, object){
+	return new Promise((resolve, reject) => {
+		exports.saveJSON(`data/${name}.json`, object)
+			.then(resolve)
+			.catch(reject);
 	});
 }
 
@@ -64,19 +80,25 @@ exports.getCommand = function(aliasOrIdentifier){
 			}else{
 				reject(`Invalid command: ${aliasOrIdentifier}`);
 			}
-		});
+		}).catch(reject);
 	});
 }
 
 exports.updateCommandList = function(){
-	fs.readdir("commands", (err, dir) => {
-		var command_names = dir.filter(p => p.endsWith(".js")).map(p => p.slice(0, -3));
-		var jsonObject = {};
-		for(let name of command_names){
-			jsonObject[name] = require(`./commands/${name}.js`).aliases;
-		}
-		exports.saveJSON("commands/command_list.json", jsonObject);
-  	console.log("- Updated Command List -");
+	return new Promise((resolve, reject) => {
+		fs.readdir("commands", (err, dir) => {
+			if(err) reject(err);
+			var command_names = dir.filter(p => p.endsWith(".js")).map(p => p.slice(0, -3));
+			var jsonObject = {};
+			for(let name of command_names){
+				jsonObject[name] = require(`./commands/${name}.js`).aliases;
+			}
+
+			exports.saveJSON("commands/command_list.json", jsonObject).then(() => {
+	  		console.log("- Updated Command List -");
+	  		resolve();
+			}).catch(console.log);
+		});
 	});
 }
 
@@ -84,18 +106,29 @@ exports.createFile = function(path, content){
 	return new Promise((resolve, reject) => {
 		fs.writeFile(path, content, (err) => {
 			if(err) reject(err);
-			resolve();
+			else resolve();
 		});
 	});
 }
 
+exports.codeblock = function(lang, content){
+	if(!content){
+		content = lang;
+		lang = "";
+	}
+
+	return "```" + lang + "\n" + content + "```";
+}
+
 function setPrefix(msg, prefix){
-	this.PrefixConfig.prefixes[msg.isPrivate ? msg.channel.id : msg.guild.id] = prefix;
-	msg.channel.sendMessage(`Set prefix to ${prefix}`);
+	return new Promise((resolve, reject) => {
+		this.PrefixConfig.prefixes[exports.channelOrGuildID(msg)] = prefix;
+		msg.channel.sendMessage(`Set prefix to ${prefix}`).then(resolve).catch(reject);
+	});
 }
 
 function getPrefix(msg){
-	return this.PrefixConfig.prefixes[msg.isPrivate ? msg.channel.id : msg.guild.id] || this.PrefixConfig.defaultPrefix;
+	return this.PrefixConfig.prefixes[exports.channelOrGuildID(msg)] || this.PrefixConfig.defaultPrefix;
 }
 
 exports.addSomeFunctionsToBot = function(bot){
@@ -103,4 +136,8 @@ exports.addSomeFunctionsToBot = function(bot){
 	console.log("Added getPrefix to bot");
 	bot.setPrefix = setPrefix;
 	console.log("Added setPrefix to bot");
+}
+
+exports.channelOrGuildID = function(msg){
+	return !msg.guild ? msg.channel.id : msg.guild.id;
 }

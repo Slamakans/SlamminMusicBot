@@ -3,6 +3,7 @@ exports.aliases = [];
 
 exports.execute = function(bot, msg, suffix){
   return new Promise((resolve, reject) => {
-    msg.channel.sendMessage("test worked").then(resolve).catch(reject);
+    console.log("Ran join");
+    bot.Music.join(msg).then(resolve).catch(msg.channel.sendMessage.bind(msg.channel));
   });
 }

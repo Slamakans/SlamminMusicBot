@@ -4,7 +4,9 @@
   "description": "Test bot written with discord.js rewrite",
   "main": "main.js",
   "dependencies": {
-    "discord.js": "github:hydrabolt/discord.js#indev-rewrite"
+    "discord.js": "github:hydrabolt/discord.js#indev-rewrite",
+    "ffmpeg": "0.0.4",
+    "node-opus": "^0.2.1"
   },
   "devDependencies": {},
   "scripts": {

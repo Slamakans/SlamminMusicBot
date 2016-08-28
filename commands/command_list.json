@@ -1,14 +1,23 @@
 {
+    "eval": [
+        "e"
+    ],
     "jerkon": [],
+    "join": [],
     "newcommand": [
         "newcommand",
         "createcommand",
         "nc"
     ],
+    "newtest": [
+        "nt",
+        "memes"
+    ],
     "ping": [
         "p",
         "pingaling"
     ],
+    "play": [],
     "prefix": [],
     "tc": [],
     "updatecommandlist": [

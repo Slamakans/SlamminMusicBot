@@ -2,10 +2,14 @@
 exports.aliases = [];
 
 exports.execute = function(bot, msg, suffix){  
-  msg.channel.sendMessage(`👌                😂
+  return new Promise((resolve, reject) => {
+    msg.channel.sendMessage(`👌                😂
        🍆 💤  👔 🍆
                         🛢      👃
                       ⚡  8=👊 = D 💦
                  🎺       🍆                  💦 
-                 👢          👢                 ${suffix}`);
+                 👢          👢                 ${suffix}`)
+      .then(resolve)
+      .catch(reject);
+  });
 }

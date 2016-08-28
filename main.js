@@ -1,6 +1,9 @@
+require('easy-profiler');
+EP.begin("startup");
 const Discord = require('discord.js');
 const bot = new Discord.Client();
 bot.on("ready", () => {
+	EP.end("startup", true);
 	console.log(`Bot is logged in and ready!`);
 })
 .on("disconnected", () => {
@@ -18,19 +21,35 @@ bot.on("ready", () => {
 		suffix = suffix ? suffix : undefined;
 		if(suffix){
 			let matches = suffix.match(/--(.*?)(?=\s--|$)/gi);
-			if(matches)
+			if(matches){
 				for(let match of matches){
 					flags[match.split(" ")[0].toLowerCase().slice(2)] = match.split(" ")[1] || true;
 				}
+
+				suffix = suffix.replace(/--(.*?)(?=\s--|$)/gi, "").trim();
+			}
 		}
 
 		if(bot.Utils.commandExists(identifier)){
 			bot.Utils.getCommand(identifier)
 				.then(command => {
+					function run(){
+						command.execute(bot, msg, suffix)
+							.then(() => {
+								bot.Utils.aliasToIdentifier(identifier).then((id) => bot.log(`${msg.author.username} executed ${id}`));
+								EP.end(identifier);
+							})
+							.catch((err) => {
+								msg.channel.sendMessage(err);
+								EP.end(identifier);
+							});
+					}
+					
+					EP.begin(identifier);
 					if(flags["delay"]){
-						setTimeout(command.execute.bind(command, bot, msg, suffix), flags["delay"]);
+						setTimeout(run, flags["delay"]);
 					}else{
-						command.execute(bot, msg, suffix);
+						run();
 					}
 				});
 		}
@@ -39,6 +58,9 @@ bot.on("ready", () => {
 
 bot.Utils = require('./utils.js');
 bot.Utils.addSomeFunctionsToBot(bot);
+
+bot.Music = require('./music.js');
+bot.Music.setBot(bot);
 
 bot.Utils.getJSON('prefix_config.json')
 	.then(object => {
