@@ -1,17 +1,25 @@
 {
-  "name": "rewrite-bot",
+  "name": "slammin-music-bot",
   "version": "1.0.0",
-  "description": "Test bot written with discord.js rewrite",
+  "description": "",
   "main": "main.js",
   "dependencies": {
-    "discord.js": "github:hydrabolt/discord.js#indev-rewrite",
-    "ffmpeg": "0.0.4",
-    "node-opus": "^0.2.1"
+    "discord.js": "^7.0.0",
+    "easy-profiler": "^1.1.3",
+    "ytdl-core": "^0.7.17"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
-  "author": "Slamakans",
-  "license": "ISC"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Slamakans/SlamminMusicBot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Slamakans/SlamminMusicBot/issues"
+  },
+  "homepage": "https://github.com/Slamakans/SlamminMusicBot#readme"
 }

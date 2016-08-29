@@ -76,3 +76,8 @@ bot.Utils.getJSON('prefix_config.json')
 				bot.login(bot.Config.auth.token);
 			}).catch(console.log);
 	});
+
+
+process.on("uncaughtException", (err) => {
+	console.log(`Caught an exception: ${err}`);
+});

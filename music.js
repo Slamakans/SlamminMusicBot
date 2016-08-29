@@ -95,15 +95,17 @@ exports.startPlaying = function(msg){
 exports.playNextSong = function(msg, connection){
   exports.getNextSong(msg)
     .then((url) => {
-      var stream = ytdl(url, {filter: 'audioonly'});
+      //var info = ytdl.getInfo(url, (err, info) => {console.log(info.formats)});
+
+      var stream = ytdl(url, {filter: (format) => /*format.audioEncoding === "opus" ||*/ format.audioBitrate <= 48 /*|| format.type.startsWith("audio/webm")*/});
       connection.playStream(stream)
         .on("end", () => {
-          playNextSong(connection);
-        })
+          exports.playNextSong(connection);
+        });
     })
     .catch((err) => {
-      connection.channel.sendMessage(err);
-      playing[connection.channel.guild.id] = false;
+      msg.channel.sendMessage(err);
+      playing[msg.guild.id] = false;
     });
 }
 
@@ -115,7 +117,7 @@ exports.getNextSong = function(msg){
         exports.removeFromQueue(msg, url, "Playing");
         resolve(url);
       }else{
-        reject("No songs left in queue");
+        reject("No songs left in queue, stopping");
       }
     });
   });
