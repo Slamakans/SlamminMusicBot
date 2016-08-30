@@ -59,7 +59,7 @@ bot.on("ready", () => {
 bot.Utils = require('./utils.js');
 bot.Utils.addSomeFunctionsToBot(bot);
 
-bot.Music = require('./music.js');
+bot.Music = require('./music2.js');
 bot.Music.setBot(bot);
 
 bot.Utils.getJSON('prefix_config.json')
@@ -79,5 +79,9 @@ bot.Utils.getJSON('prefix_config.json')
 
 
 process.on("uncaughtException", (err) => {
-	console.log(`Caught an exception: ${err}`);
+	console.log(`Caught an exception: ${err.stack}`);
 });
+
+bot.on("error", console.log);
+bot.on("warn", console.log);
+bot.on("debug", console.log);

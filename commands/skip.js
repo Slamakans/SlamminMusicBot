@@ -3,10 +3,7 @@ exports.aliases = [];
 
 exports.execute = function(bot, msg, suffix){
   return new Promise((resolve, reject) => {    
-    if(!suffix){
-      bot.Music.startPlaying(msg);
-    }else{
-      bot.Music.addToQueue(msg, suffix).catch(console.log);
-    }
+    bot.Music.skip(msg);
+    resolve();
   });
 }

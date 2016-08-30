@@ -2,7 +2,7 @@ var Utils = require("./utils.js");
 var ytdl = require('ytdl-core');
 const dataFile = "music_queue";
 
-var playing = {};
+var dispatchers = {};
 var bot;
 exports.setBot = function(botClient){
   bot = botClient;
@@ -19,12 +19,12 @@ exports.getQueues = function(){
 exports.addToQueue = function(msg, url){
   return new Promise(() => {
     exports.getQueues().then(queues => {
-      queues[Utils.channelOrGuildID(msg)] = queues[Utils.channelOrGuildID(msg)] || [];
-      queues[Utils.channelOrGuildID(msg)].push(url);
+      queues[msg.guild.id] = queues[msg.guild.id] || [];
+      queues[msg.guild.id].push({url: url, voiceChannelID: msg.guild.member(msg.author).voiceChannelID});
       console.log(queues);
       Utils.saveData(dataFile, queues)
         .then(() => {
-          msg.channel.sendMessage(`\`Added #${queues[Utils.channelOrGuildID(msg)].length}\`\n${Utils.codeblock(url)}`)
+          msg.channel.sendMessage(`\`Added to position #${queues[msg.guild.id].length}\`\n${Utils.codeblock(url)}`)
             .catch(() => reject("Response message failed to send"));
         })
         .then(() => {
@@ -40,13 +40,17 @@ exports.addToQueue = function(msg, url){
 exports.removeFromQueue = function(msg, url, type){
   return new Promise((resolve, reject) => {
     exports.getQueues().then(queues => {
-      if((queues[Utils.channelOrGuildID(msg)] || []).length > 0){
+      if((queues[msg.guild.id] || []).length > 0){
+
+
         var index;
         if(url.match(/^\d+$/)){
           index = url - 1;
-        }else index = queues[Utils.channelOrGuildID(msg)].indexOf(url);
+          url = queues[msg.guild.id][index].url;
+        }else index = queues[msg.guild.id].map(song => song.url).indexOf(url);
+        console.log(index);
 
-        queues[Utils.channelOrGuildID(msg)].splice(index, 1);
+        queues[msg.guild.id].splice(index, 1);
         Utils.saveData(dataFile, queues)
           .then(() => {
             msg.channel.sendMessage(`\`${type ? type : "Removed #" + (index+1)}\`\n${Utils.codeblock(url)}`)
@@ -67,11 +71,26 @@ exports.join = function(msg){
       reject("Can't use ´join´ in DM");
     }else{
       var guildMember = msg.guild.member(msg.author);
-      var vcID = guildMember.voiceChannelID;
-      var vc = msg.guild.channels.get(vcID);
-      if(vc){
-        vc.join().then(resolve).catch(console.log);
-      }else reject("You're not in a voice channel");
+      exports.joinById(guildMember.voiceChannelID)
+        .then(resolve)
+        .catch(() => {reject("You're not in a voice channel")});
+    }
+  });
+}
+
+exports.joinById = function(vcID){
+  return new Promise((resolve, reject) => {
+    var conn = bot.voiceConnections.array().find(vc => vc.channel.id === vcID);
+    var vc = bot.channels.array().find(c => c.id === vcID);
+
+    if(conn){
+      // Is already connected to voice channel
+      resolve(conn);
+    }else if(vc){
+      // Join voice channel if found
+      vc.join().then(resolve).catch(reject);
+    }else{
+      reject("That's not a valid voice channel");
     }
   });
 }
@@ -83,30 +102,35 @@ exports.startPlaying = function(msg){
     return;
   }
 
-  var connection = bot.voiceConnections.get(msg.guild.id);
-  if(!connection){
-    exports.join(msg).then(exports.startPlaying.bind(undefined, msg)).catch(msg.channel.sendMessage.bind(msg.channel));
-  }else{
-    playing[msg.guild.id] = true;
-    exports.playNextSong(msg, connection);
-  }
+  exports.join(msg).then(exports.playNextSong.bind(exports, msg)).catch(msg.channel.sendMessage.bind(msg.channel));
 }
 
-exports.playNextSong = function(msg, connection){
+exports.playNextSong = function(msg){
+  // connection.playFile("test.mp3"); // works
   exports.getNextSong(msg)
-    .then((url) => {
+    .then((next) => {
       //var info = ytdl.getInfo(url, (err, info) => {console.log(info.formats)});
+      //var url = next.url;
 
-      var stream = ytdl(url, {filter: (format) => /*format.audioEncoding === "opus" ||*/ format.audioBitrate <= 48 /*|| format.type.startsWith("audio/webm")*/});
-      connection.playStream(stream)
-        .on("end", () => {
-          exports.playNextSong(connection);
-        });
+      exports.joinById(next.voiceChannelID)
+        .then(conn => {
+          var stream = ytdl(next.url, {filter: f => (f.audioBitrate > 0 && !f.bitrate) || f.audioBitrate > 0});
+
+          dispatchers[msg.guild.id] = conn.playStream(stream);
+          dispatchers[msg.guild.id].once("end", () => {
+              console.log("Playing next song");
+              exports.playNextSong(msg);
+            })
+        })
+        .catch(console.log);
     })
-    .catch((err) => {
-      msg.channel.sendMessage(err);
-      playing[msg.guild.id] = false;
-    });
+    .catch(msg.channel.sendMessage.bind(msg.channel));
+}
+
+exports.skip = function(msg){
+  if(!dispatchers[msg.guild.id]) return;
+  dispatchers[msg.guild.id].end();
+  exports.playNextSong(msg);
 }
 
 exports.getNextSong = function(msg){
@@ -124,5 +148,5 @@ exports.getNextSong = function(msg){
 }
 
 exports.isPlaying = function(msg){
-  return !!playing[msg.guild.id];
+  return !!(dispatchers[msg.guild.id] || {}).speaking;
 }
