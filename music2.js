@@ -34,8 +34,8 @@ exports.addToQueue = function(msg, url) {
           voiceChannelID: msg.guild.member(msg.author).voiceChannelID,
           info: info
         });
-
-        var song_info = `${info.title} - ${Math.floor(info.length_seconds/60)}:${("00" + info.length_seconds%60).substring(-2)}`;
+        console.log(info);
+        var song_info = `${info.title} - ${Math.floor(info.length_seconds/60)}:${("0" + info.length_seconds%60).slice(-2)}`;
         Utils.saveData(dataFile, queues)
           .then(msg.channel.sendMessage.bind(msg.channel, `\`Added to position #${queues[id].length}\`\n${Utils.codeblock("haskell", song_info)}`))
           .then(() => {
@@ -61,7 +61,7 @@ exports.removeFromQueue = function(msg, position, type) {
 
         Utils.saveData(dataFile, queues)
           .then(() => {
-            var song_info = `${song.info.title} - ${Math.floor(song.info.length_seconds/60)}:${song.info.length_seconds%60}`;
+            var song_info = `${song.info.title} - ${Math.floor(song.info.length_seconds/60)}:${("0" + song.info.length_seconds%60).slice(-2)}`;
             msg.channel.sendMessage(`\`${type ? type : "Removed #" + (position)}\`\n${Utils.codeblock("haskell", song_info)}`)
               .then(() => {
                 resolve(song)
@@ -126,12 +126,16 @@ exports.playNextSong = function(msg) {
       exports.joinById(next.voiceChannelID)
         .then(conn => {
           var stream = ytdl(next.url, {
-            filter: f => (f.audioBitrate > 0 && !f.bitrate) || f.audioBitrate > 0
+            filter: f => f.type == 'audio/webm; codecs="opus"' || f.type == 'audio/webm; codecs="vorbis"'
           });
-          dispatchers[msg.guild.id] = conn.playStream(stream);
-          dispatchers[msg.guild.id].once("end", () => {
-            exports.playNextSong(msg);
-          });
+
+          stream.pipe(require("fs").createWriteStream("temp.webm"));
+          setTimeout(() => {
+            dispatchers[msg.guild.id] = conn.playFile("temp.webm");
+            dispatchers[msg.guild.id].once("end", () => {
+              exports.playNextSong(msg);
+            });
+          }, 1000);
         })
         .catch(console.log);
     })
@@ -141,9 +145,8 @@ exports.playNextSong = function(msg) {
 exports.getNextSong = function(msg) {
   return new Promise((resolve, reject) => {
     exports.removeFromQueue(msg, 1, "Playing")
-      .then((url) => {
-        console.log(url);
-        resolve(url)
+      .then((song) => {
+        resolve(song)
       })
       .catch(reject);
   });
